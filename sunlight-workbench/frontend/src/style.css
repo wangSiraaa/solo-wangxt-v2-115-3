@@ -1,0 +1,37 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.layout { display: grid; grid-template-columns: 300px 1fr 340px;
+  grid-template-rows: 48px 1fr; height: 100vh; }
+header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; background: #1b2230; color: #eee; }
+.badge { font-size: 12px; background: #4a3b12; color: #f6c453;
+  padding: 2px 8px; border-radius: 4px; }
+aside { padding: 12px; overflow-y: auto; background: #f4f5f7; display: flex;
+  flex-direction: column; gap: 8px; }
+aside.right { background: #fafbfc; border-left: 1px solid #ddd; }
+main { min-width: 0; }
+label { font-size: 12px; color: #555; margin-top: 8px; }
+select, button { padding: 6px; }
+.meta { font-size: 12px; background: #fff; border: 1px solid #ddd;
+  border-radius: 6px; padding: 8px; display: grid; gap: 4px; }
+.warn { color: #8a5a00; background: #fff7e0; padding: 6px; border-radius: 4px; }
+.error { color: #b00020; font-size: 12px; }
+.muted { color: #777; } .small { font-size: 12px; }
+.disclaimer { font-size: 12px; color: #8a5a00; background: #fff7e0;
+  padding: 6px; border-radius: 4px; margin: 8px 0; }
+.summary { width: 100%; border-collapse: collapse; font-size: 13px; }
+.summary td { border-bottom: 1px solid #eee; padding: 4px; }
+.intervals { display: flex; flex-wrap: wrap; gap: 4px; max-height: 180px;
+  overflow-y: auto; }
+.interval { font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: default; }
+.interval.sunlit { background: #fff3c4; }
+.interval.shaded { background: #dbe6f5; }
+.hourly { display: flex; flex-wrap: wrap; gap: 2px; }
+.cell { width: 26px; height: 20px; font-size: 10px; display: inline-flex;
+  align-items: center; justify-content: center; border-radius: 3px; color: #fff; }
+.cell.sunlit { background: #f6c453; color: #333; }
+.cell.shaded { background: #4a6fa5; }
+.cell.night { background: #999; }
+.north-label { color: #ff8a80; font-size: 12px; background: rgba(0,0,0,.5);
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+.trace { font-size: 12px; background: #eef4ff; padding: 8px; border-radius: 6px; }

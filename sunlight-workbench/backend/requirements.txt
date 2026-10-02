@@ -1,0 +1,15 @@
+pvlib>=0.10
+trimesh>=4.0
+shapely>=2.0
+mapbox-earcut>=1.0
+rtree>=1.0
+fastapi>=0.110
+uvicorn[standard]>=0.29
+sqlalchemy>=2.0
+geoalchemy2>=0.15
+psycopg2-binary>=2.9
+pandas>=2.0
+numpy>=1.26
+pydantic>=2.6
+pytest>=8.0
+httpx>=0.27
