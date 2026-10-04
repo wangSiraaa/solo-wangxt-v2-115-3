@@ -19,6 +19,10 @@ export default function ResultsPanel({ run, result, onHoverInterval, onTrace }) 
         </tbody>
       </table>
       <div className="muted small">{s.criterion}</div>
+      {run.group_id && (
+        <div className="muted small">本运算是多日期分析组 #{run.group_id} 的成员，
+          几何配置与同组其他日期相同（共用提交时快照）。</div>
+      )}
 
       <h4>连续遮挡/日照时段（步长 {run.step_minutes} min）</h4>
       <div className="intervals">

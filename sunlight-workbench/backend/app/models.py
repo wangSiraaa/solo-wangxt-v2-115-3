@@ -68,11 +68,32 @@ class Snapshot(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class AnalysisGroup(Base):
+    """多日期分析组：一次提交 2～5 个日期，整组共用同一个场景快照。
+
+    组内每个成员是一条普通 Run（单日分析结果，可独立下钻/追查），
+    但它们共享提交时刻生成的 Snapshot，场景之后被编辑不影响组内数据。
+    """
+    __tablename__ = "analysis_groups"
+    id = Column(Integer, primary_key=True)
+    scene_id = Column(ForeignKey("scenes.id", ondelete="CASCADE"), index=True)
+    snapshot_id = Column(ForeignKey("snapshots.id"), nullable=False)
+    step_minutes = Column(Integer, nullable=False, default=5)
+    params = Column(JSON, default=dict)        # {"dates": [...], "point_ids": [...]}
+    disclaimer = Column(Text, default=(
+        "合成场景示例评价口径输出，不构成规划合规结论。"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    runs = relationship("Run", back_populates="group")
+    snapshot = relationship("Snapshot")
+
+
 class Run(Base):
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True)
     scene_id = Column(ForeignKey("scenes.id"), index=True)
     snapshot_id = Column(ForeignKey("snapshots.id"), nullable=False)
+    group_id = Column(ForeignKey("analysis_groups.id", ondelete="CASCADE"),
+                      nullable=True, index=True)  # 空=独立单日运行
     run_date = Column(Date, nullable=False)            # 分析的日期
     step_minutes = Column(Integer, nullable=False, default=5)
     params = Column(JSON, default=dict)
@@ -81,6 +102,7 @@ class Run(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     results = relationship("RunPointResult", back_populates="run",
                            cascade="all, delete-orphan")
+    group = relationship("AnalysisGroup", back_populates="runs")
 
 
 class RunPointResult(Base):

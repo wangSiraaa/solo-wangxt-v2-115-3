@@ -35,3 +35,35 @@ select, button { padding: 6px; }
 .north-label { color: #ff8a80; font-size: 12px; background: rgba(0,0,0,.5);
   padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
 .trace { font-size: 12px; background: #eef4ff; padding: 8px; border-radius: 6px; }
+
+/* 单日/多日期切换与分段按钮 */
+.seg { display: flex; gap: 4px; margin-top: 8px; }
+.seg button { flex: 1; font-size: 12px; border: 1px solid #bbb; background: #fff;
+  border-radius: 4px; cursor: pointer; padding: 5px 4px; }
+.seg button.on { background: #1b2230; color: #fff; border-color: #1b2230; }
+.daterow { display: flex; gap: 4px; align-items: center; }
+.daterow input[type=date] { flex: 1; padding: 5px; }
+.daterow button { padding: 2px 9px; }
+button.link { border: none; background: none; color: #1565c0; text-decoration: underline;
+  padding: 0 0 0 6px; cursor: pointer; font-size: 12px; }
+
+/* 已保存分析组 */
+.grouplist { display: flex; flex-direction: column; gap: 4px; }
+.groupitem { display: flex; flex-direction: column; gap: 2px; font-size: 12px;
+  background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 6px 8px;
+  cursor: pointer; }
+.groupitem.on { border-color: #1b2230; box-shadow: inset 0 0 0 1px #1b2230; }
+
+/* 多日期汇总表 */
+.group-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+.group-table th, .group-table td { border: 1px solid #e2e5ea; padding: 5px 6px;
+  vertical-align: top; }
+.group-table th { background: #eef1f5; font-weight: 600; }
+.group-table th.drill, .group-table td.drill { cursor: pointer; }
+.group-table th.drill:hover, .group-table td.drill:hover { background: #e7f0ff; }
+
+/* 趋势图 */
+.trend { background: #fff; border: 1px solid #e2e5ea; border-radius: 6px; margin: 6px 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: #555; }
+.legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.legend-item i { width: 10px; height: 3px; display: inline-block; border-radius: 2px; }

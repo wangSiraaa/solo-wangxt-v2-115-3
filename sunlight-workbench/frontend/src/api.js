@@ -21,4 +21,14 @@ export const api = {
   trace: (runId, pointId, time) =>
     req(`/analysis/${runId}/points/${pointId}/trace` + (time ? `?time=${time}` : '')),
   snapshot: (id) => req(`/snapshots/${id}`),
+
+  // 多日期分析组：一次提交 2～5 个日期 + 统一步长，整组共用提交时快照
+  createGroup: (scene_id, dates, step_minutes = 5) =>
+    req('/analysis/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scene_id, dates, step_minutes }),
+    }),
+  group: (groupId) => req(`/analysis/groups/${groupId}`),
+  sceneGroups: (sceneId) => req(`/scenes/${sceneId}/groups`),
 }

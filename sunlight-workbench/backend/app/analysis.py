@@ -73,6 +73,30 @@ def to_intervals(samples: list[dict]) -> list[dict]:
     return intervals
 
 
+def longest_sunlit_interval(samples: list[dict]) -> dict | None:
+    """连续口径：返回最长连续晒到区间（开始/结束时刻、样本数）。
+
+    区间端点取样本时刻：n 个连续晒到样本代表 (n-1) 个完整步长间隔；
+    口径时长由 summary 按样本数累计，这里只报告起止墙钟时刻。
+    """
+    best = None
+    cur = None
+    for s in samples:
+        if s["status"] == STATUS_SUNLIT:
+            if cur is None:
+                cur = {"start": s["time"], "end": s["time"], "samples": 1}
+            else:
+                cur["end"] = s["time"]
+                cur["samples"] += 1
+        else:
+            if cur and (best is None or cur["samples"] > best["samples"]):
+                best = cur
+            cur = None
+    if cur and (best is None or cur["samples"] > best["samples"]):
+        best = cur
+    return best
+
+
 def summarize(samples: list[dict], step_minutes: int) -> dict:
     """示例评价口径（非规划合规结论）：
 
