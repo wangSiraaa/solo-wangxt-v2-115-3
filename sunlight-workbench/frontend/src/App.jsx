@@ -2,8 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { api } from './api.js'
 import SceneViewer from './components/SceneViewer.jsx'
 import ResultsPanel from './components/ResultsPanel.jsx'
+import GroupPanel from './components/GroupPanel.jsx'
 
 const DATES = ['2026-01-15', '2026-03-20', '2026-07-15'] // 跨冬夏算例日期
+// 多日期分析预设（二分二至，教师可一次对比冬至/春分/夏至）
+const SOLAR_PRESETS = [
+  { d: '2025-12-21', tag: '冬至' },
+  { d: '2026-03-20', tag: '春分' },
+  { d: '2026-06-21', tag: '夏至' },
+  { d: '2026-09-23', tag: '秋分' },
+]
+const STEPS = [1, 2, 3, 5, 6, 10, 15, 20, 30, 60] // 均整除 1440
 
 export default function App() {
   const [scenes, setScenes] = useState([])
@@ -17,13 +26,24 @@ export default function App() {
   const [highlightOccluder, setHighlightOccluder] = useState(null)
   const [trace, setTrace] = useState(null)
   const [error, setError] = useState(null)
+  // 多日期分析组
+  const [groupDates, setGroupDates] = useState(SOLAR_PRESETS.slice(0, 3).map((p) => p.d))
+  const [customDate, setCustomDate] = useState('2026-06-21')
+  const [step, setStep] = useState(5)
+  const [group, setGroup] = useState(null)
+  const [groups, setGroups] = useState([])
 
   useEffect(() => { api.scenes().then(setScenes).catch((e) => setError(String(e))) }, [])
 
   useEffect(() => {
     if (!sceneId) return
-    setRun(null); setSelectedPointId(null); setTrace(null)
+    setRun(null); setGroup(null); setSelectedPointId(null); setTrace(null)
     api.scene(sceneId).then(setPayload)
+    api.groups(sceneId).then(setGroups).catch(() => setGroups([]))
+  }, [sceneId])
+
+  useEffect(() => {
+    if (!sceneId) return
     api.sunpath(sceneId, date).then(setSunpath)
   }, [sceneId, date])
 
@@ -31,12 +51,65 @@ export default function App() {
 
   const doRun = async () => {
     setError(null)
-    const r = await api.run(sceneId, date, 5)
-    const full = await api.runResult(r.run_id)
-    setRun(full)
-    // 结果关联快照：渲染切换到快照内容，保证结果-场景一致可追溯
-    const snap = await api.snapshot(full.snapshot_id)
-    setPayload(snap.payload)
+    try {
+      const r = await api.run(sceneId, date, 5)
+      const full = await api.runResult(r.run_id)
+      setGroup(null)
+      setRun(full)
+      // 结果关联快照：渲染切换到快照内容，保证结果-场景一致可追溯
+      const snap = await api.snapshot(full.snapshot_id)
+      setPayload(snap.payload)
+    } catch (e) { setError(e.message) }
+  }
+
+  // ---- 多日期分析组 ----
+
+  const toggleDate = (d) => {
+    setError(null)
+    if (groupDates.includes(d)) setGroupDates(groupDates.filter((x) => x !== d))
+    else if (groupDates.length >= 5) setError('多日期分析最多 5 个日期')
+    else setGroupDates([...groupDates, d].sort())
+  }
+
+  const addCustomDate = () => {
+    setError(null)
+    if (!customDate) return
+    if (groupDates.includes(customDate)) return setError(`日期 ${customDate} 已在列表中`)
+    if (groupDates.length >= 5) return setError('多日期分析最多 5 个日期')
+    setGroupDates([...groupDates, customDate].sort())
+  }
+
+  const openGroup = async (groupId) => {
+    setError(null)
+    try {
+      const full = await api.group(groupId)
+      setGroup(full)
+      setRun(null); setSelectedPointId(null); setTrace(null)
+      // 整组关联提交时的同一份快照：之后编辑场景不影响本组展示
+      const snap = await api.snapshot(full.snapshot_id)
+      setPayload(snap.payload)
+      if (full.runs[0]) setDate(full.runs[0].date)
+    } catch (e) { setError(e.message) }
+  }
+
+  const doRunGroup = async () => {
+    setError(null)
+    try {
+      const r = await api.runGroup(sceneId, groupDates, step)
+      await openGroup(r.group_id)
+      setGroups(await api.groups(sceneId))
+    } catch (e) { setError(e.message) }  // 后端在执行前说明日期不合法的原因
+  }
+
+  // 下钻组内任一单日运行（及其 trace）
+  const openRun = async (runId, runDate) => {
+    setError(null)
+    try {
+      const full = await api.runResult(runId)
+      setRun(full)
+      setSelectedPointId(null); setTrace(null)
+      if (runDate) setDate(runDate)   // 太阳路径/时刻滑块对齐该日
+    } catch (e) { setError(e.message) }
   }
 
   // 当前时刻各测点状态（取最近细样本）
@@ -58,8 +131,13 @@ export default function App() {
   const selectedResult = run?.results.find((r) => r.point_id === selectedPointId)
 
   const doTrace = async (pointId) => {
-    setTrace(await api.trace(run.run_id, pointId))
+    setError(null)
+    try { setTrace(await api.trace(run.run_id, pointId)) }
+    catch (e) { setError(e.message) }
   }
+
+  // 单日日期下拉：算例日期 ∪ 当前日期（下钻组内日期后也能正确显示）
+  const dateOptions = [...new Set([...DATES, date])].sort()
 
   return (
     <div className="layout">
@@ -82,12 +160,61 @@ export default function App() {
             <div className="warn">未建模遮挡：{payload.scene.unmodeled_occluders}</div>
           </div>
         )}
-        <label>日期（跨冬夏算例）</label>
+        <label>日期（单日 · 跨冬夏算例）</label>
         <select value={date} onChange={(e) => setDate(e.target.value)}>
-          {DATES.map((d) => <option key={d}>{d}</option>)}
+          {dateOptions.map((d) => <option key={d}>{d}</option>)}
         </select>
         <button disabled={!sceneId} onClick={doRun}>运行当日分析（5min 步长）</button>
-        {run && <div className="muted small">run #{run.run_id} · 快照 #{run.snapshot_id}</div>}
+        {run && (
+          <div className="muted small">
+            run #{run.run_id} · 快照 #{run.snapshot_id}
+            {run.group_id ? ` · 组 #${run.group_id}` : ''}
+          </div>
+        )}
+
+        <details className="multiday" open>
+          <summary>多日期分析（2～5 个日期 · 统一连续采样步长）</summary>
+          <div className="chips">
+            {groupDates.map((d) => (
+              <span key={d} className="chip">{d}
+                <b title="移除" onClick={() => toggleDate(d)}>×</b>
+              </span>
+            ))}
+          </div>
+          {SOLAR_PRESETS.map(({ d, tag }) => (
+            <label className="check" key={d}>
+              <input type="checkbox" checked={groupDates.includes(d)}
+                onChange={() => toggleDate(d)} />
+              {tag} {d}
+            </label>
+          ))}
+          <div className="row">
+            <input type="date" value={customDate}
+              onChange={(e) => setCustomDate(e.target.value)} />
+            <button onClick={addCustomDate}>添加日期</button>
+          </div>
+          <label>统一采样步长（连续口径）</label>
+          <select value={step} onChange={(e) => setStep(+e.target.value)}>
+            {STEPS.map((s) => <option key={s} value={s}>{s} min</option>)}
+          </select>
+          <button disabled={!sceneId || groupDates.length < 2} onClick={doRunGroup}>
+            运行多日期分析（{groupDates.length} 个日期）
+          </button>
+        </details>
+
+        {groups.length > 0 && (
+          <>
+            <label>已保存的多日期分析组（点击重新打开）</label>
+            {groups.map((g) => (
+              <button key={g.group_id} className="group-item"
+                onClick={() => openGroup(g.group_id)}>
+                组#{g.group_id} · {g.dates.map((d) => d.slice(5)).join(' / ')}
+                · {g.step_minutes}min
+              </button>
+            ))}
+          </>
+        )}
+
         {error && <div className="error">{error}</div>}
         {sunpath && (
           <>
@@ -114,6 +241,11 @@ export default function App() {
           onSelectBuilding={setHighlightOccluder} />
       </main>
       <aside className="right">
+        {group && (
+          <GroupPanel group={group} points={payload?.points}
+            activeRunId={run?.run_id} onPickDate={openRun}
+            onClose={() => setGroup(null)} />
+        )}
         <ResultsPanel
           run={run} result={selectedResult}
           onHoverInterval={(iv) => setHighlightOccluder(iv?.occluder ?? null)}

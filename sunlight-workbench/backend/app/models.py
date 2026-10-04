@@ -68,17 +68,37 @@ class Snapshot(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class RunGroup(Base):
+    """多日期分析组：一次提交产生 2~5 个关联运行，整组共享同一份场景快照。
+
+    组内所有日期的结果都来自提交那一刻的场景配置（同一个 snapshot_id），
+    之后场景被编辑也不会混入组内结果。
+    """
+    __tablename__ = "run_groups"
+    id = Column(Integer, primary_key=True)
+    scene_id = Column(ForeignKey("scenes.id"), index=True)
+    snapshot_id = Column(ForeignKey("snapshots.id"), nullable=False)
+    dates = Column(JSON, nullable=False)               # 本地日期列表，升序
+    step_minutes = Column(Integer, nullable=False, default=5)  # 全组统一步长
+    params = Column(JSON, default=dict)
+    disclaimer = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    runs = relationship("Run", back_populates="group")
+
+
 class Run(Base):
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True)
     scene_id = Column(ForeignKey("scenes.id"), index=True)
     snapshot_id = Column(ForeignKey("snapshots.id"), nullable=False)
+    group_id = Column(ForeignKey("run_groups.id"), nullable=True, index=True)
     run_date = Column(Date, nullable=False)            # 分析的日期
     step_minutes = Column(Integer, nullable=False, default=5)
     params = Column(JSON, default=dict)
     disclaimer = Column(Text, default=(
         "合成场景示例评价口径输出，不构成任何规划合规结论。"))
     created_at = Column(DateTime, default=datetime.utcnow)
+    group = relationship("RunGroup", back_populates="runs")
     results = relationship("RunPointResult", back_populates="run",
                            cascade="all, delete-orphan")
 

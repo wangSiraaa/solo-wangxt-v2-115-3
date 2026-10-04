@@ -35,3 +35,38 @@ select, button { padding: 6px; }
 .north-label { color: #ff8a80; font-size: 12px; background: rgba(0,0,0,.5);
   padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
 .trace { font-size: 12px; background: #eef4ff; padding: 8px; border-radius: 6px; }
+
+/* 多日期分析组 */
+details.multiday { border: 1px solid #ddd; border-radius: 6px; background: #fff;
+  padding: 6px 8px; display: flex; flex-direction: column; }
+details.multiday summary { font-size: 12px; color: #555; cursor: pointer; }
+details.multiday[open] summary { margin-bottom: 6px; }
+details.multiday > * { margin-top: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: 11px; background: #e8eef7; border-radius: 10px;
+  padding: 2px 4px 2px 8px; display: inline-flex; align-items: center; gap: 4px; }
+.chip b { cursor: pointer; color: #b00020; padding: 0 4px; }
+label.check { display: flex; align-items: center; gap: 6px; font-size: 12px;
+  color: #333; margin-top: 2px; }
+.row { display: flex; gap: 4px; }
+.row input[type="date"] { flex: 1; min-width: 0; padding: 4px; }
+.group-item { text-align: left; font-size: 12px; }
+.group-panel { border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 8px; }
+.group-head { display: flex; justify-content: space-between; align-items: center; }
+.view-toggle { display: flex; gap: 4px; margin: 6px 0; }
+.view-toggle button { flex: 1; font-size: 12px; }
+.view-toggle button.active { background: #1b2230; color: #f6c453; }
+.group-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.group-table th, .group-table td { border: 1px solid #e3e6ea; padding: 4px;
+  text-align: center; }
+.group-table th { background: #f0f2f5; font-size: 11px; }
+.group-table tbody tr { cursor: pointer; }
+.group-table tbody tr:hover { background: #eef4ff; }
+.group-table tbody tr.active { background: #fff3c4; }
+.tiny { font-size: 10px; }
+svg.trend { background: #fff; border: 1px solid #e3e6ea; border-radius: 6px; }
+svg.trend .axis { font-size: 9px; fill: #777; }
+svg.trend circle { cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; margin: 4px 0; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+  margin-right: 3px; }

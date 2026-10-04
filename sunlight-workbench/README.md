@@ -17,7 +17,27 @@ cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload
 cd frontend && npm install && npm run dev
 ```
 
-首次打开点击"初始化合成场景"，选择场景与日期后"运行当日分析"。
+首次打开点击"初始化合成场景"，选择场景与日期后"运行当日分析"；或在"多日期分析"中勾选 2～5 个日期（预设冬至/春分/夏至/秋分，可自定义）一次跑出分析组。
+
+> 数据库结构变更说明：本次新增 `run_groups` 表与 `runs.group_id` 列。
+> `create_all` 只建新表、不改旧表——沿用旧数据卷时请重建
+> （`docker compose down -v && docker compose up --build`）或自行迁移。
+
+## 多日期分析组（冬至/春分/夏至一次对比）
+
+- `POST /api/analysis/run-group`：一个场景 + **2～5 个本地日期** + **统一采样步长**。
+  所有校验在**执行前**完成：日期格式/公历有效性、重复日期、日期个数、步长整除
+  1440，任一不合法直接 400 并说明原因，不产生任何部分结果。
+- 整组**只建一份场景快照**，各日期运行共享 `snapshot_id` 与 `group_id`——组内
+  结果全部来自提交那一刻的场景配置，之后编辑场景不会混入；与单日入口共用同一
+  执行函数，故组内某日结果与同参数单日运行逐样本一致。
+- `GET /api/analysis-groups/{id}`：返回每个日期 × 测点的**连续口径**累计晒到
+  分钟、最长连续晒到分钟与最长连续区间（本地起止时间）。
+- `GET /api/scenes/{id}/analysis-groups`：列出场景已保存的组，页面刷新后由此
+  重新打开；点击组内日期行/趋势图圆点下钻到对应单日运行（`GET /api/analysis/{run_id}`）
+  及其遮挡追查 trace。
+- 组汇总只用**连续采样口径**；整点快览（逐时采样）仍在单日运行视图内，两者页面
+  上严格分区，不可混读。
 
 ## 坐标基准统一（关键约定）
 
@@ -45,6 +65,7 @@ cd frontend && npm install && npm run dev
 | `test_interval_folding_handcalc` | 合成布尔序列折叠为连续区间 |
 | `test_winter_summer_shaded_point` | 同一测点冬季日照 < 夏季；逐样本与方位修正后的解析阈值一致 |
 | `test_api_logic` | 快照结构、几何重建、遮挡物归属 |
+| `test_multiday` | 多日期组：执行前校验原因、组汇总==单日结果、整组一份快照、改场景后组数据不变、刷新重开与下钻 |
 
 种子场景：**S1 邻楼遮挡**（正南板楼+东南塔楼 vs 目标楼，跨冬夏 2026-01-15 / 2026-07-15 对比）与 **S2 旋转场景**（S1 旋转 30°，物理等价，验证旋转口径——同日期结果逐样本一致）。
 
@@ -53,6 +74,7 @@ cd frontend && npm install && npm run dev
 ## 结果追溯
 
 - 每次运行先生成**场景快照**（`snapshots.payload` 含完整几何+坐标基准），结果关联快照 ID，场景后续被编辑不影响追溯（`GET /api/snapshots/{id}`）。
+- **多日期分析组整组只建一份快照**（`run_groups.snapshot_id`），组内各日期运行共享；`GET /api/analysis-groups/{id}` 取组汇总，`GET /api/scenes/{id}/analysis-groups` 列出场景的组，刷新后可重新打开并下钻。
 - 每个细样本都记录遮挡物名称/距离/命中点，`GET /api/analysis/{run}/points/{point}/trace[?time=...]` 支持单点追查；前端悬停遮挡时段即高亮对应建筑。
 
 ## 已知局限（必须阅读）
